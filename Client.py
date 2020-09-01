@@ -28,6 +28,7 @@ class Client:
         return cmd_map
 
     def login(self, username=None, password=None):
+        pass
         def judge(txt):
             txt = json.loads(txt)
             if txt['status'] == 0:
@@ -62,7 +63,7 @@ class Client:
         # 处理响应
         list_res = json.loads(lists_response.text)
         msg = '查询成功！'
-        print(lists_response.text)
+        # print(lists_response.text)
         if list_res['status'] != 0:
             msg = '查询失败！' + list_res['message']
         if list_res['status'] == 0:
@@ -118,9 +119,9 @@ class Client:
         # print(file_info)
         # return
         cur_file_info = FileInfo(file_info.st_mode, file_info.st_mtime, path, os.path.getsize(path)).json_dump()
-        print((cur_file_info))
+        # print((cur_file_info))
         cur_file_info = parse.quote(cur_file_info, safe='')
-        print((cur_file_info))
+        # print((cur_file_info))
         upload_response = requests.post(cfg.URLS['upload'] + '?' + 'fileinfo=' + cur_file_info, data=upload_data,
                                         cookies=user_cookie)
         upload_res = upload_response.text
@@ -131,4 +132,4 @@ class Client:
 if __name__ == '__main__':
     c = Client()
     c.login()
-    c.upload()
+    c.query()
