@@ -83,27 +83,34 @@ class Client:
             return False, '注销失败，错误信息：\n' + str(err)
         return True, '注销成功！'
 
-    def download(self, path=''):
+    def download(self, path='space.png'):
         global user_cookie
         global main_user
+        t1 = time.time()
         if path.strip() == '':
             return False, '请输入下载文件路径！'
         download_response = requests.get(cfg.URLS['download'] + '?' + 'path=' + path, cookies=user_cookie)
-        print(download_response.content)
+        # print(download_response.text)
         status = 1
         try:
             response_dict = json.loads(download_response.text)
         except:
             status = 0
             response_dict = {}
-        print(response_dict)
+        # print(response_dict)
         file_content = ''
+        print(time.time() - t1)
         if status != 0:
             status = response_dict['status']
         else:
-            file_content = download_response.text
-            print(file_content)
-           # with open(os.path.join())
+            file_content = download_response.content
+            # print(file_content)
+            with open(os.path.join('download', path), 'wb') as dld_file:
+                dld_file.write(file_content)
+                # print(file_content, file=dld_file)
+                # for item in file_content:
+                #     print(item, file=dld_file)
+
         if status != 0:
             msg = '下载失败！' + response_dict['message']
         else:
@@ -132,4 +139,4 @@ class Client:
 if __name__ == '__main__':
     c = Client()
     c.login()
-    c.query()
+    c.download()
