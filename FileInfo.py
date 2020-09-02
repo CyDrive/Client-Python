@@ -17,6 +17,7 @@ class FileInfo:
     def json_dump(self):
         instance_map = {}
         for item in vars(self).items():
+            # print(type(item[0]), item[0], '!')
             instance_map[item[0]] = item[1]
         return json.dumps(instance_map)
 

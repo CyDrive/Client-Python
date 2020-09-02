@@ -11,6 +11,10 @@ from urllib import parse
 
 class Client:
 
+    def __init__(self):
+        self.sess = requests.Session()
+        self.user = User()
+
     def get_cmd_map(self):
         cmd_map = {
             'login': self.login,
@@ -28,38 +32,40 @@ class Client:
         return cmd_map
 
     def login(self, username=None, password=None):
-        pass
         def judge(txt):
             txt = json.loads(txt)
             if txt['status'] == 0:
                 return True
             return False
-
+        t1 = time.time()
         # 测试账号
         if username is None and password is None:
             username = 'test'
             password = 'testCyDrive'
-        #
+
+        self.user = User()
         password = password.encode()
         psw_hashed = hashlib.sha256(hashlib.md5(password).digest()).digest()
         psw_str = ''
         for item in psw_hashed:
             psw_str = psw_str + str(int(item))
         # 处理响应
-        login_response = requests.post(cfg.URLS['login'], data={'username': username, 'password': psw_str})
-        global user_cookie
-        user_cookie = login_response.cookies
-
+        login_response = self.sess.post(cfg.URLS['login'], data={'username': username, 'password': psw_str})
         login_dict = json.loads(login_response.text)
+        print('login time: ', time.time() - t1)
         if judge(login_response.text):
             if username == 'test':
+                self.user.username = username
+                self.user.password = password
                 return True, '测试账号登陆成功！' + login_dict['message']
+            self.user.username = username
+            self.user.password = password
             return True, '登陆成功！' + login_dict['message']
         return False, '登陆失败！' + login_dict['message']
 
     def query(self, path=''):
-        global user_cookie
-        lists_response = requests.get(cfg.URLS['list'] + '?' + 'path=' + path, cookies=user_cookie)
+        lists_response = self.sess.get(cfg.URLS['list'], params={'path': path})
+        print(lists_response.url)
         # 处理响应
         list_res = json.loads(lists_response.text)
         msg = '查询成功！'
@@ -76,40 +82,31 @@ class Client:
         exit(0)
 
     def exit_account(self):
-        global user_cookie
         try:
-            user_cookie = None
+            self.sess = requests.Session()
         except Exception as err:
             return False, '注销失败，错误信息：\n' + str(err)
         return True, '注销成功！'
 
     def download(self, path='space.png'):
-        global user_cookie
-        global main_user
         t1 = time.time()
         if path.strip() == '':
             return False, '请输入下载文件路径！'
-        download_response = requests.get(cfg.URLS['download'] + '?' + 'path=' + path, cookies=user_cookie)
-        # print(download_response.text)
+        download_response = self.sess.get(cfg.URLS['download'], params={'path': path}, stream=True)
+        print(download_response.text)
         status = 1
         try:
             response_dict = json.loads(download_response.text)
         except:
             status = 0
             response_dict = {}
-        # print(response_dict)
-        file_content = ''
-        print(time.time() - t1)
+        print('download time: ', time.time() - t1)
         if status != 0:
             status = response_dict['status']
         else:
             file_content = download_response.content
-            # print(file_content)
             with open(os.path.join('download', path), 'wb') as dld_file:
                 dld_file.write(file_content)
-                # print(file_content, file=dld_file)
-                # for item in file_content:
-                #     print(item, file=dld_file)
 
         if status != 0:
             msg = '下载失败！' + response_dict['message']
@@ -118,25 +115,25 @@ class Client:
         return status == 0, msg
 
     def upload(self, path='hello.txt'):
-        global user_cookie
         with open(path, 'rb') as upload_file:
             upload_data = upload_file.read()
             file_info = os.stat(path)
-        # print(upload_data)
-        # print(file_info)
-        # return
         cur_file_info = FileInfo(file_info.st_mode, file_info.st_mtime, path, os.path.getsize(path)).json_dump()
         # print((cur_file_info))
         cur_file_info = parse.quote(cur_file_info, safe='')
         # print((cur_file_info))
-        upload_response = requests.post(cfg.URLS['upload'] + '?' + 'fileinfo=' + cur_file_info, data=upload_data,
-                                        cookies=user_cookie)
+        upload_response = self.sess.post(cfg.URLS['upload'], params={'fileinfo': cur_file_info}, data=upload_data)
         upload_res = upload_response.text
         print(upload_res)
         return False, '上传失败！'
 
 
 if __name__ == '__main__':
+    user = User()
     c = Client()
+    print(c.user.username, c.user.password)
     c.login()
-    c.download()
+    print(c.user.username, c.user.password)
+    # c.query('lovexx')
+    # c.download()
+    c.upload()

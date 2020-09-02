@@ -33,7 +33,6 @@ def execute(cur_client, args=''):
 
 
 if __name__ == '__main__':
-    main_user = User()
     main_client = Client()
     while True:
         cmd_str = input()
